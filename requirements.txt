@@ -1,0 +1,9 @@
+jax
+jaxlib
+optax
+chex
+numpy
+matplotlib
+seaborn
+gymnax
+flashbax

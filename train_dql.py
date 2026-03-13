@@ -1,16 +1,10 @@
-from flax import struct
 from typing import NamedTuple, Tuple
 import jax
 import jax.numpy as jnp
 import jax.random as jr
-import jax.nn as jnn
 from jax.random import PRNGKey
 import flashbax as fbx
 import optax
-import gymnax
-from gymnax.environments import environment
-import chex
-from sympy import evaluate
 from CAS_Acrobot_DQL.custom_acrobot import CustomAcrobot, EnvState, EnvParams
 
 

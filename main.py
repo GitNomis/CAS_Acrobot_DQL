@@ -1,11 +1,10 @@
-from CAS_Acrobot_DQL.train_dql import ENV, ENV_PARAMS, evaluate, initialize_mlp, rollout, train
+from CAS_Acrobot_DQL.train_dql import ENV, ENV_PARAMS, evaluate, initialize_mlp, rollout, train, evaluate
 from CAS_Acrobot_DQL.visualise import animate_acrobot, plot_history, visualize_trajectory
 
 
 import jax
 import jax.random as jr
 from jax.random import PRNGKey
-from sympy import evaluate
 
 
 def main():
