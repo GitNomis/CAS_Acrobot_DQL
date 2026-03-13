@@ -7,11 +7,8 @@ import flashbax as fbx
 import optax
 from CAS_Acrobot_DQL.custom_acrobot import CustomAcrobot, EnvState, EnvParams
 
-
 ENV = CustomAcrobot()
 ENV_PARAMS = ENV.default_params
-# ENV_PARAMS = ENV_PARAMS.replace(max_steps_in_episode=1000)
-
 
 class Carry(NamedTuple):
     obs: jax.Array
@@ -118,7 +115,7 @@ def train(params, key, num_iters, update_interval=4, target_interval=100):
         state, loss = jax.lax.cond(do_update, lambda s: update_params(s, rng_loss), lambda s: (s, jnp.nan), state)
 
         # Evaluate policy
-        avg_times, success_rate = jax.lax.cond(state.i % eval_interval == 0, lambda p: evaluate(p, rng_loss), lambda _: (jnp.nan, jnp.nan), state.params)
+        max_success_streak, avg_success_streak = jax.lax.cond(state.i % eval_interval == 0, lambda p: evaluate(p, rng_loss), lambda _: (jnp.nan, jnp.nan), state.params)
 
         # Update target network
         state = jax.lax.cond(state.i % target_interval == 0, lambda s: s._replace(target_params=s.params), lambda s: s, state)
@@ -133,7 +130,7 @@ def train(params, key, num_iters, update_interval=4, target_interval=100):
 
         state = state._replace(i=state.i + 1)
 
-        return state, (state.i, loss, avg_times, success_rate)
+        return state, (state.i, loss, max_success_streak, avg_success_streak)
 
     iter_keys = jr.split(key, num_iters)
     state = TState(buffer_state=buffer_state, params=params, target_params=params, opt_state=opt_state, env_state=env_state, obs=obs, i=0)
@@ -157,14 +154,12 @@ def evaluate(params: list, rng: jax.Array):
     n_episodes = 50
     parallel_rollout = jax.vmap(rollout, in_axes=(None, 0, None))
     keys = jr.split(rng, n_episodes)
-    outputs = parallel_rollout(params, keys, ENV_PARAMS.max_steps_in_episode)
+    _,success_streaks = parallel_rollout(params, keys, ENV_PARAMS.max_steps_in_episode)
 
-    times = jnp.argmax(outputs.done, 1)
-    success = times < (ENV_PARAMS.max_steps_in_episode - 1)
-    avg_success_times = jnp.sum(jnp.where(success, times, 0)) / jnp.sum(success)
-    success_rate = jnp.sum(success) / n_episodes
+    maximum_success_streak = jnp.max(success_streaks).astype(jnp.float32)
+    average_success_streak = jnp.mean(maximum_success_streak).astype(jnp.float32)
 
-    return avg_success_times, success_rate
+    return maximum_success_streak, average_success_streak
 
 
 def get_action(params: list, obs: jax.Array, rng: jax.Array, epsilon: float = 0.0):
@@ -285,7 +280,7 @@ def rollout(params: list, rng_input: jax.Array, steps_in_episode: int):
         )
         carry = Carry(obs=next_obs, state=next_state, rng=rng)
         output = Transition(obs=state_input.obs, action=action, reward=reward, next_obs=next_obs, done=done)
-        return carry, output
+        return carry, (output,next_state.success_streak)
 
     # Scan over episode step loop
     _, scan_out = jax.lax.scan(

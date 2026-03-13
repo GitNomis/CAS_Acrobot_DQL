@@ -14,8 +14,10 @@ def main():
     key, subkey = jr.split(key)
     params = initialize_mlp(layer_sizes, key=subkey)
 
+    K = [50,200,1000,5000]
+    experiment_n=0
     key, subkey = jr.split(key)
-    params, history = train(params, subkey, num_iters=10000000, update_interval=4, target_interval=100)
+    params, history = train(params, subkey, num_iters=10000000, update_interval=4, target_interval=K[experiment_n])
 
     plot_history(history)
 
@@ -26,10 +28,11 @@ def main():
     print(f"Times: {times}")
     print(f"Success Rate: {success_rate}")
 
-    outputs = jit_rollout(params, subkey, ENV_PARAMS.max_steps_in_episode)
+    outputs, _ = jit_rollout(params, subkey, ENV_PARAMS.max_steps_in_episode)
 
     visualize_trajectory(outputs, blocking=False)
-    animate_acrobot(outputs)  # , save_path="acrobot.gif")
+    animate_acrobot(outputs, save_path=f"acrobot_{K[experiment_n]}.gif")
+
 
 if __name__ == '__main__':
     main()

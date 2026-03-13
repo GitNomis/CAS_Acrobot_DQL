@@ -32,7 +32,7 @@ class EnvParams:
     max_vel_2: float = 9 * jnp.pi
     torque_noise_max: float = 0.0
     max_steps_in_episode: int = 500
-    success_streak_threshold: int = 8
+    success_streak_threshold: int = 10
     success_height_threshold: float = 1.5
 
 
@@ -90,8 +90,7 @@ class CustomAcrobot(environment.Environment):
         )
 
         success_streak = jnp.where(success_angle, state.success_streak + 1, 0)
-        done_streak = (success_streak >= params.success_streak_threshold)
-        reward = -1.0 + success_streak#jnp.where(done_streak, 0.0, -1.0)
+        reward = jnp.minimum(success_streak, params.success_streak_threshold) / params.success_streak_threshold 
 
         # Update state dict and evaluate termination conditions
         state = EnvState(
@@ -143,17 +142,8 @@ class CustomAcrobot(environment.Environment):
 
     def is_terminal(self, state: EnvState, params: EnvParams) -> bool:
         """Check whether state is terminal."""
-        # Check termination and construct updated state
-        # done_angle = (
-        #     -jnp.cos(state.joint_angle1)
-        #     - jnp.cos(state.joint_angle2 + state.joint_angle1)
-        #     > 1.0
-        # )
-        # Check number of steps in episode termination condition
         done_steps = state.time >= params.max_steps_in_episode
-        done_streak = (state.success_streak >= params.success_streak_threshold)
-        done = jnp.logical_or(done_streak, done_steps)
-        return done
+        return done_steps
 
     @property
     def name(self) -> str:

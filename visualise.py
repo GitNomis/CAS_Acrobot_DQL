@@ -112,47 +112,46 @@ def visualize_trajectory(output, blocking=True):
     reward = output.reward
     ts = jnp.arange(0, ENV_PARAMS.dt * len(output.obs), ENV_PARAMS.dt)
 
-    fig, ax = plt.subplots(ENV.obs_shape[0] + 2, 1, figsize=(8, 8))
-    # first three plots for the system states
-    ax[0].set_title('System states over time')
+    fig, ax = plt.subplots(ENV.obs_shape[0] + 2, 1, figsize=(8, 16), sharex=True)
 
     for d in range(ENV.obs_shape[0]):
         ax[d].plot(ts, obs[:, d], color='C0', label=f'State {d}')
-    ax[0].set_title(r'$\cos(\theta_1)$')
-    ax[1].set_title(r'$\sin(\theta_1)$')
-    ax[2].set_title(r'$\cos{\theta_2}$')
-    ax[3].set_title(r'$\sin(\theta_2)$')
-    ax[4].set_title(r'$\dot{\theta_1}$')
-    ax[5].set_title(r'$\dot{\theta_2}$')
+    ax[0].set_ylabel(r'$\cos(\theta_1)$')
+    ax[1].set_ylabel(r'$\sin(\theta_1)$')
+    ax[2].set_ylabel(r'$\cos(\theta_2)$')
+    ax[3].set_ylabel(r'$\sin(\theta_2)$')
+    ax[4].set_ylabel(r'$\dot{\theta_1}$')
+    ax[5].set_ylabel(r'$\dot{\theta_2}$')
 
     ax[ENV.obs_shape[0]].plot(ts, action, color='C1', label=f'Actions')
-    # ax[3].set_ylim((env.action_space().low, env.action_space().high))
-    ax[ENV.obs_shape[0]].set_title('u(t)')
+    ax[ENV.obs_shape[0]].set_ylabel('u(t)')
     ax[ENV.obs_shape[0] + 1].plot(ts, reward, color='C2', label='Rewards')
-    ax[ENV.obs_shape[0] + 1].set_title('r(t)')
+    ax[ENV.obs_shape[0] + 1].set_ylabel('r(t)')
 
+    fig.align_ylabels()
     plt.tight_layout()
     plt.show(block=blocking)
 
 
 def plot_history(history):
-    iters, loss, avg_times, success_rate = history
+    iters, loss, max_success_streak, avg_success_streak = history
 
     fig, ax = plt.subplots(3, 1, figsize=(9, 12), sharex=True)
 
     mask = ~jnp.isnan(loss)
     sns.scatterplot(x=iters[mask], y=loss[mask], s=10, alpha=0.3, ax=ax[0])
     ax[0].set_ylabel("Loss")
+    ax[0].set_yscale("log")
 
-    mask = ~jnp.isnan(avg_times)
-    sns.regplot(x=iters[mask], y=avg_times[mask], lowess=True,
+    mask = ~jnp.isnan(max_success_streak)
+    sns.regplot(x=iters[mask], y=max_success_streak[mask], lowess=True,
                 scatter_kws={"s": 20, "alpha": 0.3}, line_kws={"color": "orange", "lw": 2, "alpha": 0.6}, ax=ax[1])
-    ax[1].set_ylabel("Avg Episode Length")
+    ax[1].set_ylabel("Max Success Streak")
 
-    mask = ~jnp.isnan(success_rate)
-    sns.regplot(x=iters[mask], y=success_rate[mask], lowess=True,
+    mask = ~jnp.isnan(avg_success_streak)
+    sns.regplot(x=iters[mask], y=avg_success_streak[mask], lowess=True,
                 scatter_kws={"s": 20, "alpha": 0.3}, line_kws={"color": "orange", "lw": 2, "alpha": 0.6}, ax=ax[2])
-    ax[2].set_ylabel("Success Rate")
+    ax[2].set_ylabel("Avg Success Streak")
     ax[2].set_xlabel("Training Steps")
 
     for a in ax:
