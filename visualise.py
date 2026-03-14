@@ -94,13 +94,13 @@ def animate_acrobot(output, save_path=None):
     )
 
     if save_path is not None:
-        anim.save(save_path, fps=max(1, int(round(1 / ENV_PARAMS.dt))))
+        anim.save(save_path, fps=max(1, int(ENV_PARAMS.max_steps_in_episode/10)))
 
     plt.show()
     return anim
 
 
-def visualize_trajectory(output, blocking=True):
+def visualize_trajectory(output, blocking=True, save_path=None):
     """Visualize the trajectory of the Acrobot.
 
     Args:
@@ -112,7 +112,7 @@ def visualize_trajectory(output, blocking=True):
     reward = output.reward
     ts = jnp.arange(0, ENV_PARAMS.dt * len(output.obs), ENV_PARAMS.dt)
 
-    fig, ax = plt.subplots(ENV.obs_shape[0] + 2, 1, figsize=(8, 16), sharex=True)
+    fig, ax = plt.subplots(ENV.obs_shape[0] + 2, 1, figsize=(8, 15), sharex=True)
 
     for d in range(ENV.obs_shape[0]):
         ax[d].plot(ts, obs[:, d], color='C0', label=f'State {d}')
@@ -127,13 +127,16 @@ def visualize_trajectory(output, blocking=True):
     ax[ENV.obs_shape[0]].set_ylabel('u(t)')
     ax[ENV.obs_shape[0] + 1].plot(ts, reward, color='C2', label='Rewards')
     ax[ENV.obs_shape[0] + 1].set_ylabel('r(t)')
+    ax[ENV.obs_shape[0] + 1].set_xlabel('Time (s)')
 
     fig.align_ylabels()
     plt.tight_layout()
+    if save_path is not None:
+        plt.savefig(save_path, dpi=600)
     plt.show(block=blocking)
 
 
-def plot_history(history):
+def plot_history(history, save_path=None):
     iters, loss, max_success_streak, avg_success_streak = history
 
     fig, ax = plt.subplots(3, 1, figsize=(9, 12), sharex=True)
@@ -157,4 +160,7 @@ def plot_history(history):
     for a in ax:
         a.grid(alpha=0.3)
     plt.tight_layout()
+
+    if save_path is not None:
+        plt.savefig(save_path, dpi=600)
     plt.show()

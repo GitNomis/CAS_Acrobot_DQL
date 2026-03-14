@@ -157,7 +157,7 @@ def evaluate(params: list, rng: jax.Array):
     _,success_streaks = parallel_rollout(params, keys, ENV_PARAMS.max_steps_in_episode)
 
     maximum_success_streak = jnp.max(success_streaks).astype(jnp.float32)
-    average_success_streak = jnp.mean(maximum_success_streak).astype(jnp.float32)
+    average_success_streak = jnp.mean(success_streaks).astype(jnp.float32)
 
     return maximum_success_streak, average_success_streak
 
